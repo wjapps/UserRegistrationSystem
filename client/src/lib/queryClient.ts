@@ -12,15 +12,32 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  console.log(`API Request: ${method} ${url}`, data);
+  
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+  };
+  
+  if (data) {
+    headers['Content-Type'] = 'application/json';
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    credentials: "include", // Important for auth cookies
   });
 
-  await throwIfResNotOk(res);
-  return res;
+  console.log(`API Response status: ${res.status}`);
+  
+  try {
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    console.error(`API Request failed for ${method} ${url}:`, error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -30,9 +47,18 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     console.log(`Fetch request for: ${queryKey[0]}`);
-    const res = await fetch(queryKey[0] as string, {
-      credentials: "include",
+    const url = queryKey[0] as string;
+    console.log(`Making fetch request to: ${url}`);
+    
+    const res = await fetch(url, {
+      credentials: "include", // This is important for cookies/session
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
     });
+    
+    console.log(`Response status from ${url}:`, res.status);
     
     console.log(`Response status for ${queryKey[0]}: ${res.status}`);
 

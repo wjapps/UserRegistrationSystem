@@ -66,6 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   passport.serializeUser((user: any, done) => {
+    console.log("Serializing user:", user);
     done(null, user.id);
   });
 

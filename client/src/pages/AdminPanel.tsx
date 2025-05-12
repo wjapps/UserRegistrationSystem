@@ -44,6 +44,8 @@ export default function AdminPanel() {
   const { data: users = [], isLoading, error: usersError } = useQuery<User[]>({
     queryKey: ["/api/users"],
     enabled: isAuthenticated,
+    retry: 1,
+    refetchOnWindowFocus: true,
   });
   
   // Log data for debugging
