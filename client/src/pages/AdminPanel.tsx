@@ -41,10 +41,17 @@ export default function AdminPanel() {
   }, [isAuthenticated, authLoading, setLocation]);
 
   // Fetch users
-  const { data: users, isLoading } = useQuery({
+  const { data: users = [], isLoading, error: usersError } = useQuery<User[]>({
     queryKey: ["/api/users"],
     enabled: isAuthenticated,
   });
+  
+  // Log data for debugging
+  console.log("Successfully fetched users:", users);
+  
+  // Debug information
+  console.log("Auth state:", { isAuthenticated, authLoading, user });
+  console.log("Users data:", { users, isLoading, usersError });
 
   // Edit user mutation
   const updateUserMutation = useMutation({
@@ -164,8 +171,14 @@ export default function AdminPanel() {
   };
 
   // Process users data for display (filtering, sorting)
-  const processUsersData = () => {
-    if (!users) return [];
+  const processUsersData = (): User[] => {
+    // If users is not an array or is empty, return empty array
+    if (!Array.isArray(users) || users.length === 0) {
+      console.log("No users data available to process");
+      return [];
+    }
+
+    console.log("Processing users data:", users);
 
     // Filter users based on search query and filter option
     let filteredUsers = users;
@@ -173,7 +186,7 @@ export default function AdminPanel() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filteredUsers = users.filter(
-        (user) =>
+        (user: User) =>
           user.name.toLowerCase().includes(query) ||
           user.email.toLowerCase().includes(query) ||
           user.mobile.toLowerCase().includes(query) ||
@@ -185,7 +198,7 @@ export default function AdminPanel() {
       const twentyFourHoursAgo = new Date();
       twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
       
-      filteredUsers = filteredUsers.filter((user) => {
+      filteredUsers = filteredUsers.filter((user: User) => {
         if (!user.createdAt) return false;
         const createdDate = new Date(user.createdAt);
         return createdDate > twentyFourHoursAgo;
@@ -193,15 +206,24 @@ export default function AdminPanel() {
     }
 
     // Sort users
-    if (sortConfig.key) {
-      filteredUsers = [...filteredUsers].sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === "asc" ? -1 : 1;
+    if (sortConfig.key !== "") {
+      filteredUsers = [...filteredUsers].sort((a: User, b: User) => {
+        const key = sortConfig.key as keyof User;
+        
+        // Handle special case for dates
+        if (key === 'createdAt') {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === "asc" ? 1 : -1;
-        }
-        return 0;
+        
+        // Handle normal string/number comparisons
+        const aValue = String(a[key] || '');
+        const bValue = String(b[key] || '');
+        
+        return sortConfig.direction === "asc" 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
       });
     }
 
@@ -209,6 +231,7 @@ export default function AdminPanel() {
   };
 
   const processedUsers = processUsersData();
+  console.log("Processed users for display:", processedUsers);
 
   if (authLoading) {
     return (
