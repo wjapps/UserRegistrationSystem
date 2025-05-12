@@ -90,19 +90,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post('/api/login', (req, res, next) => {
     try {
+      console.log('Login attempt:', req.body);
       loginSchema.parse(req.body);
+      console.log('Credentials validated');
       
       passport.authenticate('local', (err: Error, user: any, info: any) => {
         if (err) {
+          console.error('Authentication error:', err);
           return res.status(500).json({ message: 'Authentication error' });
         }
         if (!user) {
-          return res.status(401).json({ message: info.message || 'Invalid credentials' });
+          console.log('Authentication failed:', info?.message || 'No user found');
+          return res.status(401).json({ message: info?.message || 'Invalid credentials' });
         }
+        console.log('User authenticated:', user);
         req.login(user, (loginErr) => {
           if (loginErr) {
+            console.error('Login session error:', loginErr);
             return res.status(500).json({ message: 'Login error' });
           }
+          console.log('Login successful, session created for user:', user.username);
           return res.json({ 
             message: 'Login successful',
             user: { 
@@ -122,7 +129,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/session', (req, res) => {
+    console.log('Session check, authenticated:', req.isAuthenticated());
     if (req.isAuthenticated()) {
+      console.log('User in session:', req.user);
       return res.json({ 
         isAuthenticated: true, 
         user: { 
