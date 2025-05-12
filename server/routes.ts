@@ -178,9 +178,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log("User created successfully:", newUser);
         res.status(201).json(newUser);
-      } catch (dbError) {
-        console.error("Database error creating user:", dbError);
-        res.status(500).json({ message: 'Error creating user in database', error: dbError.message });
+      } catch (error) {
+        console.error("Database error creating user:", error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        res.status(500).json({ message: 'Error creating user in database', error: errorMessage });
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -196,9 +197,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Protected user management routes
   app.get('/api/users', isAuthenticated, async (req, res) => {
     try {
+      console.log("GET /api/users - Fetching all users");
       const users = await storage.getAllUsers();
+      console.log(`GET /api/users - Retrieved ${users.length} users:`, users);
       res.json(users);
     } catch (error) {
+      console.error("GET /api/users - Error:", error);
       res.status(500).json({ message: 'Error fetching users' });
     }
   });
