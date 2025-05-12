@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import RegisterPage from "@/pages/RegisterPage";
 import LoginPage from "@/pages/LoginPage";
 import AdminPanel from "@/pages/AdminPanel";
+import UsersTestPage from "@/pages/UsersTestPage";
 import { AuthProvider } from "@/hooks/useAuth";
 
 function Router() {
@@ -15,6 +16,7 @@ function Router() {
       <Route path="/" component={RegisterPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/admin" component={AdminPanel} />
+      <Route path="/test-users" component={UsersTestPage} />
       <Route component={NotFound} />
     </Switch>
   );
