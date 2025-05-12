@@ -69,21 +69,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log(`Deserializing user with ID: ${id}`);
       // For simplicity, we only support admin users in the session
       // Find admin by checking each admin's ID
       const allAdmins = await db.select().from(admins);
+      console.log(`Found ${allAdmins.length} total admins`, allAdmins);
       const admin = allAdmins.find(a => a.id === id);
+      console.log(`Deserialized user from ID ${id}:`, admin || 'No user found');
       done(null, admin);
     } catch (error) {
+      console.error(`Error deserializing user ID ${id}:`, error);
       done(error);
     }
   });
 
   // Authentication middleware
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
+    console.log(`Authentication check for ${req.method} ${req.path}`);
+    console.log(`Is authenticated: ${req.isAuthenticated()}`);
+    console.log(`Session:`, req.session);
+    console.log(`User:`, req.user);
+    
     if (req.isAuthenticated()) {
+      console.log(`User ${(req.user as any)?.username || 'unknown'} is authenticated, proceeding to ${req.path}`);
       return next();
     }
+    
+    console.log(`Authentication failed for ${req.path}`);
     res.status(401).json({ message: 'Unauthorized' });
   };
 

@@ -20,7 +20,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    console.log("Getting all users from database...");
+    try {
+      const allUsers = await db.select().from(users);
+      console.log(`Retrieved ${allUsers.length} users from database:`, allUsers);
+      return allUsers;
+    } catch (error) {
+      console.error("Error retrieving all users:", error);
+      throw error;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -68,11 +76,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAdmin(username: string): Promise<Admin | undefined> {
-    const [admin] = await db
-      .select()
-      .from(admins)
-      .where(eq(admins.username, username));
-    return admin || undefined;
+    console.log(`Looking for admin with username: ${username}`);
+    try {
+      const allAdmins = await db.select().from(admins);
+      console.log(`Found ${allAdmins.length} total admin accounts`);
+      
+      const [admin] = await db
+        .select()
+        .from(admins)
+        .where(eq(admins.username, username));
+      
+      console.log(`Admin lookup result:`, admin || 'No admin found');
+      return admin || undefined;
+    } catch (error) {
+      console.error(`Error finding admin (${username}):`, error);
+      throw error;
+    }
   }
 
   async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
@@ -85,13 +104,25 @@ export class DatabaseStorage implements IStorage {
 
   // Initialize the database with default admin user if it doesn't exist
   async initialize(): Promise<void> {
-    const adminExists = await this.getAdmin("admin");
-    if (!adminExists) {
-      await this.createAdmin({
-        username: "admin",
-        password: "password" // In a real app, this would be hashed
-      });
-      console.log("Created default admin user");
+    console.log("Initializing database...");
+    try {
+      console.log("Checking if admin user exists...");
+      const adminExists = await this.getAdmin("admin");
+      console.log("Admin check result:", adminExists);
+      
+      if (!adminExists) {
+        console.log("Creating default admin user...");
+        const admin = await this.createAdmin({
+          username: "admin",
+          password: "password" // In a real app, this would be hashed
+        });
+        console.log("Created default admin user:", admin);
+      } else {
+        console.log("Default admin user already exists");
+      }
+    } catch (error) {
+      console.error("Error during database initialization:", error);
+      throw error;
     }
   }
 }
